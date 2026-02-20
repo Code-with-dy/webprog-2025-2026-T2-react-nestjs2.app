@@ -1,50 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { supabase } from "./supabaseClient";
 
-// Use environment variable for the backend URL
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/guestbook';
+function App() {
+  const [profiles, setProfiles] = useState([]);
 
-export default function App() {
-  const [entries, setEntries] = useState([]);
-  const [form, setForm] = useState({ name: '', message: '' });
+  useEffect(() => {
+    fetchProfiles();
+  }, []);
 
-  const load = async () => {
-    const res = await fetch(API_URL);
-    setEntries(await res.json());
-  };
+  async function fetchProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*");
 
-  useEffect(() => { load(); }, []);
-
-  const save = async (e) => {
-    e.preventDefault();
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    });
-    setForm({ name: '', message: '' });
-    load();
-  };
-
-  const remove = async (id) => {
-    await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-    load();
-  };
+    if (error) {
+      console.error(error);
+    } else {
+      setProfiles(data);
+    }
+  }
 
   return (
-    <div style={{ maxWidth: '600px', margin: 'auto', padding: '2rem' }}>
-      <h1>My Profile & Guestbook</h1>
-      <form onSubmit={save}>
-        <input placeholder="Name" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-        <textarea placeholder="Message" value={form.message} onChange={e => setForm({...form, message: e.target.value})} required />
-        <button type="submit">Sign Guestbook</button>
-      </form>
-      <hr />
-      {entries.map(e => (
-        <div key={e.id}>
-          <p><strong>{e.name}</strong>: {e.message}</p>
-          <button onClick={() => remove(e.id)}>Delete</button>
-        </div>
+    <div>
+      <h1>Profiles</h1>
+      {profiles.map((profile) => (
+        <p key={profile.id}>{profile.username}</p>
       ))}
     </div>
   );
 }
+
+export default App;
